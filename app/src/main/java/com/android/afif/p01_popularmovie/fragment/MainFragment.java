@@ -1,6 +1,7 @@
 package com.android.afif.p01_popularmovie.fragment;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -14,10 +15,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.GridView;
+import android.widget.Toast;
 
 import com.android.afif.p01_popularmovie.DetailActivity;
-import com.android.afif.p01_popularmovie.adapter.MovieAdapter;
 import com.android.afif.p01_popularmovie.R;
+import com.android.afif.p01_popularmovie.adapter.MovieAdapter;
 import com.android.afif.p01_popularmovie.model.Movie;
 import com.android.afif.p01_popularmovie.utils.Constant;
 import com.android.afif.p01_popularmovie.utils.NetworkUtil;
@@ -35,6 +37,7 @@ public class MainFragment extends Fragment {
     private static final String LOG_TAG = MainFragment.class.getSimpleName();
 
     @Nullable
+    private SharedPreferences sharedPref;
     private String menuOrder;
     private MovieAdapter movieAdapter;
     private GridView gridView;
@@ -100,6 +103,19 @@ public class MainFragment extends Fragment {
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        new MovieAsyncTask().execute(Constant.BASE_URL + menuOrder + Constant.BASE_URL_API_KEY + Constant.API_KEY);
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        // save SharedPreferences
+        new PrefUtil(getActivity(), getString(R.string.pref_key_sort)).putString(getString(R.string.pref_key_sort), menuOrder);
+    }
+
+    @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.main_menu, menu);
     }
@@ -153,11 +169,17 @@ public class MainFragment extends Fragment {
             ArrayList list = QueryUtils.fetchMovieData(String[0]);
             return list;
         }
-        
+
+
         @Override
         protected void onPostExecute(ArrayList<Movie> list) {
-            movieAdapter = new MovieAdapter(getActivity(), list);
-            gridView.setAdapter(movieAdapter);
+            super.onPostExecute(list);
+            if (list != null) {
+                movieAdapter = new MovieAdapter(getActivity(), list);
+                gridView.setAdapter(movieAdapter);
+            } else {
+                Toast.makeText(getContext(), "Failed To Fetch Data, please check API KEY & your internet connection", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 }
