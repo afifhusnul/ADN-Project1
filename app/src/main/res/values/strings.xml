@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">P01-PopularMovie</string>
+    <string name="app_name">P02-PopularMovie</string>
 
     <!-- Menu -->
     <string name="menu_sort">Category</string>

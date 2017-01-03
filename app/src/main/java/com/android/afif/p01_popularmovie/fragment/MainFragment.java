@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.GridLayoutManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -22,7 +23,6 @@ import com.android.afif.p01_popularmovie.R;
 import com.android.afif.p01_popularmovie.adapter.MovieAdapter;
 import com.android.afif.p01_popularmovie.model.Movie;
 import com.android.afif.p01_popularmovie.utils.Constant;
-import com.android.afif.p01_popularmovie.utils.NetworkUtil;
 import com.android.afif.p01_popularmovie.utils.PrefUtil;
 import com.android.afif.p01_popularmovie.utils.QueryUtils;
 
@@ -36,17 +36,32 @@ public class MainFragment extends Fragment {
 
     private static final String LOG_TAG = MainFragment.class.getSimpleName();
 
+
     @Nullable
     private SharedPreferences sharedPref;
     private String menuOrder;
     private MovieAdapter movieAdapter;
     private GridView gridView;
     private ArrayList<Movie> movies;
+    private GridLayoutManager mgridLayoutManager;
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+
+        // Initialize Order
+        menuOrder = new PrefUtil(getActivity(), getString(R.string.pref_key_sort)).getString(getString(R.string.pref_key_sort));
+
+        // Default order
+        if ((menuOrder != null) && menuOrder.isEmpty()) {
+            menuOrder = Constant.SORTBY_DEFAULT_PARAM;
+        }
+    }
 
 
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
         // Inflate the layout for this fragment
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
@@ -57,10 +72,6 @@ public class MainFragment extends Fragment {
         gridView = (GridView) rootView.findViewById(R.id.movie_list);
         gridView.setAdapter(movieAdapter);
 
-        if (new NetworkUtil(getActivity()).isConnected()) {
-            MovieAsyncTask task = new MovieAsyncTask();
-            task.execute(Constant.BASE_URL + menuOrder + Constant.BASE_URL_API_KEY + Constant.API_KEY);
-        }
 
         // Handle ImageClick to get movie details
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -81,26 +92,9 @@ public class MainFragment extends Fragment {
                 startActivity(I);
             }
         });
-
         return rootView;
     }
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        // add method to fragment menu events
-        setHasOptionsMenu(true);
-
-        // Read SharedPreference and initialize value
-        menuOrder = new PrefUtil(getActivity(), getString(R.string.pref_key_sort))
-                .getString(getString(R.string.pref_key_sort));
-
-        // initialize default choice for first load
-        if ((menuOrder != null) && menuOrder.isEmpty()) {
-            menuOrder = Constant.SORTBY_DEFAULT_PARAM;
-        }
-    }
 
     @Override
     public void onStart() {
@@ -108,11 +102,31 @@ public class MainFragment extends Fragment {
         new MovieAsyncTask().execute(Constant.BASE_URL + menuOrder + Constant.BASE_URL_API_KEY + Constant.API_KEY);
     }
 
+/*
     @Override
+    public void onResume() {
+        super.onResume();
+        new PrefUtil(getActivity(), getString(R.string.pref_key_sort)).putString(getString(R.string.pref_key_sort), menuOrder);
+        Log.i(LOG_TAG, "On Resume: Isi Menu : " + menuOrder);
+    }
+*/
+
+    /*@Override
     public void onStop() {
         super.onStop();
         // save SharedPreferences
         new PrefUtil(getActivity(), getString(R.string.pref_key_sort)).putString(getString(R.string.pref_key_sort), menuOrder);
+    }*/
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        new PrefUtil(getActivity(), getString(R.string.pref_key_sort)).putString(getString(R.string.pref_key_sort), menuOrder);
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
     }
 
     @Override
@@ -182,4 +196,5 @@ public class MainFragment extends Fragment {
             }
         }
     }
+
 }
